@@ -1,5 +1,6 @@
  /*
  * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2010-2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +69,9 @@ import com.google.android.mms.pdu.EncodedStringValue;
 import com.google.android.mms.pdu.PduBody;
 import com.google.android.mms.pdu.PduPersister;
 import com.google.android.mms.pdu.SendReq;
+
+import android.telephony.MSimTelephonyManager;
+import android.telephony.MSimSmsManager;
 
 /**
  * Contains all state related to a message being edited by the user.
@@ -1172,7 +1176,11 @@ public class WorkingMessage {
             Log.d(LogTag.TRANSACTION, "sendSmsWorker sending message: recipients=" +
                     semiSepRecipients + ", threadId=" + threadId);
         }
-        MessageSender sender = new SmsMessageSender(mActivity, dests, msgText, threadId);
+        MessageSender sender;
+
+        sender = new SmsMessageSender(mActivity, dests, msgText, threadId,
+               MSimSmsManager.getDefault().getPreferredSmsSubscription());
+
         try {
             sender.sendMessage(threadId);
 
@@ -1272,6 +1280,10 @@ public class WorkingMessage {
             mStatusListener.onAttachmentError(error);
             return;
         }
+
+        ContentValues values = new ContentValues(1);
+        values.put(Mms.SUB_ID, MSimTelephonyManager.getDefault().getPreferredDataSubscription());
+        SqliteWrapper.update(mActivity, mContentResolver, mmsUri, values, null, null);
 
         MessageSender sender = new MmsMessageSender(mActivity, mmsUri,
                 slideshow.getCurrentMessageSize());

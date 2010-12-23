@@ -212,7 +212,7 @@ public class MessagingPreferenceActivity extends PreferenceActivity {
         } else if (preference == mManageSimPref) {
             startActivity(new Intent(this, ManageSimMessages.class));
         } else if (preference == mGsmUmtsCbPref) {
-            if (!TelephonyManager.isMultiSimEnabled()) {
+            if (!TelephonyManager.getDefault().isMultiSimEnabled()) {
                 startActivity(new Intent(this, GsmUmtsCellBroadcastSms.class));
             }
         } else if (preference == mClearHistoryPref) {

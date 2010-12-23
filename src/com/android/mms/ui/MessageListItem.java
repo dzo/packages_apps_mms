@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008 Esmertec AG.
  * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2010-2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +74,7 @@ import com.android.mms.util.SmileyParser;
 import com.google.android.mms.ContentType;
 import com.google.android.mms.pdu.PduHeaders;
 
+import android.telephony.TelephonyManager;
 /**
  * This class provides view of a message in the messages list.
  */
@@ -186,7 +188,8 @@ public class MessageListItem extends LinearLayout implements
                                 + String.valueOf((msgItem.mMessageSize + 1023) / 1024)
                                 + mContext.getString(R.string.kilobyte);
 
-        mBodyTextView.setText(formatMessage(msgItem, msgItem.mContact, null, msgItem.mSubject,
+        mBodyTextView.setText(formatMessage(msgItem, msgItem.mContact, null,
+                                            msgItem.mSubscription, msgItem.mSubject,
                                             msgItem.mHighlight, msgItem.mTextContentType));
 
         mDateView.setText(msgSizeText + " " + msgItem.mTimestamp);
@@ -270,7 +273,7 @@ public class MessageListItem extends LinearLayout implements
         CharSequence formattedMessage = msgItem.getCachedFormattedMessage();
         if (formattedMessage == null) {
             formattedMessage = formatMessage(msgItem, msgItem.mContact, msgItem.mBody,
-                                             msgItem.mSubject,
+                                             msgItem.mSubscription, 	msgItem.mSubject,
                                              msgItem.mHighlight, msgItem.mTextContentType);
         }
         mBodyTextView.setText(formattedMessage);
@@ -375,9 +378,14 @@ public class MessageListItem extends LinearLayout implements
     ForegroundColorSpan mColorSpan = null;  // set in ctor
 
     private CharSequence formatMessage(MessageItem msgItem, String contact, String body,
-                                       String subject, Pattern highlight,
+                                       int subId, String subject, Pattern highlight,
                                        String contentType) {
         SpannableStringBuilder buf = new SpannableStringBuilder();
+
+       if (TelephonyManager.getDefault().isMultiSimEnabled()) {
+           buf.append( (subId == 0) ? "SUB1:" : "SUB2:");
+           buf.append("\n");
+       }
 
         boolean hasSubject = !TextUtils.isEmpty(subject);
         SmileyParser parser = SmileyParser.getInstance();
