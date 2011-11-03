@@ -41,7 +41,8 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.util.Log;
-import android.widget.Toast;
+
+import com.android.internal.telephony.MSimConstants;
 
 public class GsmUmtsCellBroadcastSms extends PreferenceActivity {
     // debug data
@@ -53,6 +54,9 @@ public class GsmUmtsCellBroadcastSms extends PreferenceActivity {
     // Preference instance variables.
     private CheckBoxPreference mAreaInfoPreference;
 
+    // Instance variables
+    private int mSubscription = 0;
+
     @Override
     public boolean onPreferenceTreeClick(PreferenceScreen preferenceScreen,
             Preference preference) {
@@ -60,22 +64,11 @@ public class GsmUmtsCellBroadcastSms extends PreferenceActivity {
             boolean state = mAreaInfoPreference.isChecked();
             Log.d(LOG_TAG, "onPreferenceTreeClick: AreaInfo - " + state);
             GsmBroadcastConfigurator gbc = GsmBroadcastConfigurator.getInstance(this);
-            if (!gbc.switchService(mAreaInfoPreference.isChecked())) {
-                displayErrorToast(state);
-                // Since swithService failed, reset the state of the
-                // preference.
-                mAreaInfoPreference.setChecked(!state);
-            }
+            gbc.switchService(mAreaInfoPreference.isChecked(), mSubscription);
             return true;
         }
 
         return false;
-    }
-
-    void displayErrorToast(boolean state) {
-        String msg = state ? "Enabling " : "Disabling ";
-        msg = msg + "Msg_Id 50" +  " failed." + " Try after some time";
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
     public void onCreate(Bundle icicle) {
@@ -83,7 +76,10 @@ public class GsmUmtsCellBroadcastSms extends PreferenceActivity {
 
         addPreferencesFromResource(R.xml.gsm_umts_cell_broadcast_sms);
         mAreaInfoPreference = (CheckBoxPreference) findPreference(AREA_INFO_PREFERENCE_KEY);
-        Log.d(LOG_TAG, "onCreate:");
+        mSubscription = getIntent().getIntExtra(MSimConstants.SUBSCRIPTION_KEY,
+              MSimConstants.SUB1);
+        Log.d(LOG_TAG, "onCreate: mSubscription is: " + mSubscription);
+
     }
 
     @Override
@@ -91,7 +87,7 @@ public class GsmUmtsCellBroadcastSms extends PreferenceActivity {
         super.onResume();
 
         GsmBroadcastConfigurator gbc = GsmBroadcastConfigurator.getInstance(this);
-        mAreaInfoPreference.setChecked(gbc.getMessageStatus());
+        mAreaInfoPreference.setChecked(gbc.getMessageStatus(mSubscription));
     }
 
     @Override

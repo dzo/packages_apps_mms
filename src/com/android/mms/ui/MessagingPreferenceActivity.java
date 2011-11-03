@@ -233,6 +233,8 @@ public class MessagingPreferenceActivity extends PreferenceActivity {
         } else if (preference == mGsmUmtsCbPref) {
             if (!TelephonyManager.getDefault().isMultiSimEnabled()) {
                 startActivity(new Intent(this, GsmUmtsCellBroadcastSms.class));
+            } else {
+                startActivity(new Intent(this, SelectSubscription.class));
             }
         } else if (preference == mClearHistoryPref) {
             showDialog(CONFIRM_CLEAR_SEARCH_HISTORY_DIALOG);

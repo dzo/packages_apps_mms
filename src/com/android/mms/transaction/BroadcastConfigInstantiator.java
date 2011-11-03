@@ -34,14 +34,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
-import android.telephony.TelephonyManager;
+import android.telephony.MSimTelephonyManager;
 import android.util.Log;
 
 public class BroadcastConfigInstantiator extends BroadcastReceiver {
     private static final String LOG_TAG = "BroadcastConfigInstantiator";
-    private ServiceStateListener mServiceStateListener = new ServiceStateListener();
+    int mPhoneCount =  MSimTelephonyManager.getDefault().getPhoneCount();
+    private ServiceStateListener[] mServiceStateListener = new ServiceStateListener[mPhoneCount];
     private Context mContext;
-    private int mServiceState = -1;
+    private int[] mServiceState = new int[mPhoneCount];
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -54,34 +55,52 @@ public class BroadcastConfigInstantiator extends BroadcastReceiver {
 
         mContext = context;
         Log.d(LOG_TAG, "Registering for ServiceState updates");
-        TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
-        tm.listen(mServiceStateListener, PhoneStateListener.LISTEN_SERVICE_STATE);
+        MSimTelephonyManager tm = MSimTelephonyManager.getDefault();
+
+        for (int i = 0; i < mPhoneCount; i++) {
+            Log.d(LOG_TAG, "Sub: " + i + ", registering for ServiceState updates.");
+            mServiceState[i] = -1;
+            mServiceStateListener[i] = new ServiceStateListener(i);
+            tm.listen(mServiceStateListener[i], PhoneStateListener.LISTEN_SERVICE_STATE);
+        }
     }
 
     private class ServiceStateListener extends PhoneStateListener {
+        int mSubscription;
+
+        ServiceStateListener(int subscription) {
+            mSubscription = subscription;
+        }
+
         @Override
         public void onServiceStateChanged(ServiceState ss) {
-            if (ss.getState() != mServiceState) {
-                Log.d(LOG_TAG, "Service state changed! " + ss.getState() + " Full: " + ss);
+            if (ss.getState() != mServiceState[mSubscription]) {
+                Log.d(LOG_TAG, "Sub: " + mSubscription + ", service state changed! " +
+                      ss.getState() + " Full:  " + ss);
                 if (ss.getState() == ServiceState.STATE_IN_SERVICE ||
                     ss.getState() == ServiceState.STATE_EMERGENCY_ONLY) {
-                    TelephonyManager tm = (TelephonyManager)mContext.getSystemService(
-                          Context.TELEPHONY_SERVICE);
-                    if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
-                        Log.d(LOG_TAG, "Instantiating GSM CB configurator");
-                        GsmBroadcastConfigurator gbc = GsmBroadcastConfigurator.getInstance(mContext);
-                        Log.d(LOG_TAG, "Configure MsgId 50 from SP");
-                        gbc.configStoredValue();
+                    MSimTelephonyManager tm = MSimTelephonyManager.getDefault();
+                    if (tm.getCurrentPhoneType(mSubscription) ==
+                            MSimTelephonyManager.PHONE_TYPE_GSM) {
+                        Log.d(LOG_TAG, "Instantiating GSM CB configurator on sub: " +
+                                mSubscription);
+                        GsmBroadcastConfigurator gbc =
+                           GsmBroadcastConfigurator.getInstance(mContext);
+                        Log.d(LOG_TAG, "Configure MsgId 50 from SP on sub: " + mSubscription);
+                        gbc.configStoredValue(mSubscription);
                     } else {
-                        Log.d(LOG_TAG, "Instantiating CDMA CB configurator");
+                        Log.d(LOG_TAG, "Instantiating CDMA CB configurator on sub: " +
+                                mSubscription);
                         // Instantiating CdmaBroadcastConfigurator triggers setting of cdma bc config
-                        CdmaBroadcastConfigurator cc = CdmaBroadcastConfigurator.getInstance(mContext);
+                        CdmaBroadcastConfigurator cc =
+                                CdmaBroadcastConfigurator.getInstance(mContext);
                     }
 
                     // Unregister
-                    tm.listen(mServiceStateListener, PhoneStateListener.LISTEN_NONE);
+                    tm.listen(mServiceStateListener[mSubscription],
+                          PhoneStateListener.LISTEN_NONE);
                 }
-                mServiceState = ss.getState();
+                mServiceState[mSubscription] = ss.getState();
             }
         }
    }

@@ -32,6 +32,7 @@ package com.android.mms.transaction;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.telephony.SmsManager;
+import android.telephony.MSimSmsManager;
 import android.telephony.TelephonyManager;
 
 /*
@@ -41,7 +42,8 @@ import android.telephony.TelephonyManager;
  */
 public class GsmBroadcastConfigurator {
     private static GsmBroadcastConfigurator sInstance = null;
-    boolean mConfig;
+    int phoneCount = TelephonyManager.getDefault().getPhoneCount();
+    boolean mConfig[][] = new boolean[phoneCount][1];
     private Context mC;
 
     // Message IDs.
@@ -56,8 +58,10 @@ public class GsmBroadcastConfigurator {
 
         // Read saved info from shared preference.
         SharedPreferences sp = mC.getSharedPreferences(SP_FILE_NAME, 0);
-        String spKey = SP_KEY;
-        mConfig = sp.getBoolean(spKey, false);
+        for (int i = 0; i < phoneCount; i++) {
+            String spKey = SP_KEY + i;
+            mConfig[i][0] = sp.getBoolean(spKey, false);
+        }
     }
 
     public static GsmBroadcastConfigurator getInstance(Context c) {
@@ -67,46 +71,46 @@ public class GsmBroadcastConfigurator {
         return sInstance;
     }
 
-    public boolean switchService(boolean newStateIsOn) {
-        boolean ret = true;
+    public void switchService(boolean newStateIsOn, int subscription) {
+        if (mConfig[subscription][0] != newStateIsOn) {
+            smsManagerSwitchService(newStateIsOn, subscription);
+            mConfig[subscription][0] = newStateIsOn;
 
-        if (mConfig != newStateIsOn) {
-            ret = smsManagerSwitchService(newStateIsOn);
-            if (ret) {
-                mConfig = newStateIsOn;
+            SharedPreferences sp = mC.getSharedPreferences(SP_FILE_NAME, 0);
+            SharedPreferences.Editor spe = sp.edit();
+            String spKey = SP_KEY + subscription;
+            spe.putBoolean(spKey, newStateIsOn);
+            spe.commit();
+        }
+    }
 
-                SharedPreferences sp = mC.getSharedPreferences(SP_FILE_NAME, 0);
-                SharedPreferences.Editor spe = sp.edit();
-                String spKey = SP_KEY;
-                spe.putBoolean(spKey, newStateIsOn);
-                spe.commit();
+    private boolean smsManagerSwitchService(boolean newStateIsOn, int subscription) {
+        if (TelephonyManager.getDefault().isMultiSimEnabled()) {
+            MSimSmsManager sm = MSimSmsManager.getDefault();
+            if (newStateIsOn) {
+                return sm.enableCellBroadcast(AREA_INFO_MSG_ID, subscription);
+            } else {
+                return sm.disableCellBroadcast(AREA_INFO_MSG_ID, subscription);
+            }
+        } else  {
+            SmsManager sm = SmsManager.getDefault();
+            if (newStateIsOn) {
+                return sm.enableCellBroadcast(AREA_INFO_MSG_ID);
+            } else {
+                return sm.disableCellBroadcast(AREA_INFO_MSG_ID);
             }
         }
-
-        return ret;
     }
 
-    private boolean smsManagerSwitchService(boolean newStateIsOn) {
-        SmsManager sm = SmsManager.getDefault();
-        if (newStateIsOn) {
-            return sm.enableCellBroadcast(AREA_INFO_MSG_ID);
-        } else {
-            return sm.disableCellBroadcast(AREA_INFO_MSG_ID);
-        }
-    }
-
-    public void configStoredValue() {
+    public void configStoredValue(int subscription) {
         // If the message is enabled in the previous power cycle configure it.
-        if (mConfig) {
-            if (!smsManagerSwitchService(mConfig)) {
-                // If enabling message fails reset the status.
-                mConfig = false;
-            }
+        if (mConfig[subscription][0]) {
+            smsManagerSwitchService(mConfig[subscription][0], subscription);
         }
     }
 
-    public boolean getMessageStatus() {
-        return mConfig;
+    public boolean getMessageStatus(int subscription) {
+        return mConfig[subscription][0];
     }
 
     public static boolean isMsgIdSupported(int msgId) {

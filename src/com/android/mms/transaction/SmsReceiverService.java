@@ -62,6 +62,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.internal.telephony.MSimConstants;
 import com.android.internal.telephony.TelephonyIntents;
 import com.android.mms.R;
 import com.android.mms.LogTag;
@@ -388,7 +389,8 @@ public class SmsReceiverService extends Service {
         int subscription;
 
         Object[] obj = (Object[])intent.getSerializableExtra("pdus");
-        subscription = intent.getIntExtra("sub_id", 0);
+        subscription = intent.getIntExtra(MSimConstants.SUBSCRIPTION_KEY,
+                MSimConstants.SUB1);
 
         if (obj == null) {
             Log.e(TAG, "Failed to extraxt pdus from CB SMS Intent.");
@@ -414,7 +416,7 @@ public class SmsReceiverService extends Service {
             return;
         }
 
-        Uri cbMsgUri = storeCbMessage(this, msgs, error);
+        Uri cbMsgUri = storeCbMessage(this, msgs, error, subscription);
 
         if (cbMsgUri != null) {
             // Called off of the UI thread so ok to block.
@@ -634,7 +636,8 @@ public class SmsReceiverService extends Service {
         return insertedUri;
     }
 
-    private Uri storeCbMessage(Context context, SmsCbMessage[] msgs, int error) {
+    private Uri storeCbMessage(Context context, SmsCbMessage[] msgs, int error,
+            int subscription) {
         SmsCbMessage sms = msgs[0];
 
         // Store the message in the content provider.
@@ -642,7 +645,7 @@ public class SmsReceiverService extends Service {
 
         String addr = "CH(" + sms.getMessageIdentifier() + ")";
         values.put(Inbox.ADDRESS, addr);
-        Log.d(TAG, "storeCbMessage : ADDRESS " + addr);
+        Log.d(TAG, "storeCbMessage : ADDRESS " + addr + ", subscription " + subscription);
 
         // Use now for the timestamp to avoid confusion with clock
         // drift between the handset and the SMSC.
@@ -650,6 +653,7 @@ public class SmsReceiverService extends Service {
         values.put(Inbox.READ, 0);
         values.put(Inbox.SEEN, 0);
         values.put(Sms.ERROR_CODE, error);
+        values.put(Sms.SUB_ID, subscription);
 
         int pduCount = msgs.length;
 

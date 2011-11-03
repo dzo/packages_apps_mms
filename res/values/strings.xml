@@ -873,5 +873,10 @@
     <!-- Message of the dialog used to disable messaging notifications [CHAR LIMIT=none] -->
     <string name="disable_notifications_dialog_message">Stop duplicate text message notifications from default Messaging app?</string>
 
+    <!-- Subscription selection strings -->
+    <string name="select_subscription_title">Select Subscription</string>
+    <string name="subscription1_title">Subscription 1</string>
+    <string name="subscription2_title">Subscription 2</string>
+
 </resources>
 

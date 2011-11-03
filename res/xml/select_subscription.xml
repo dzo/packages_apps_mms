@@ -14,16 +14,15 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+        android:title="@string/cell_broadcast_sms_title">
 
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory android:title="@string/cb_sms_settings">
+    <PreferenceCategory android:title="@string/select_subscription_title">
+        <Preference android:key="pref_key_subscription1"
+                      android:title="@string/subscription1_title" />
 
-        <CheckBoxPreference android:key="area_info_msgs_key"
-            android:title="@string/area_info_msgs"
-            android:persistent="false"
-            android:summaryOn="@string/area_info_msgs_enabled"
-            android:summaryOff="@string/area_info_msgs_disabled"/>
-
+        <Preference android:key="pref_key_subscription2"
+                      android:title="@string/subscription2_title" />
     </PreferenceCategory>
 
 </PreferenceScreen>
