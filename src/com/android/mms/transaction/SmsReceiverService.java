@@ -19,6 +19,7 @@ package com.android.mms.transaction;
 
 import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.provider.Telephony.Sms.Intents.SMS_RECEIVED_ACTION;
+import static android.provider.Telephony.Sms.Intents.SMS_CB_RECEIVED_ACTION;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -54,6 +55,7 @@ import android.provider.Telephony.Sms.Outbox;
 import android.telephony.ServiceState;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
+import android.telephony.SmsCbMessage;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -203,6 +205,8 @@ public class SmsReceiverService extends Service {
                     handleSmsSent(intent, error);
                 } else if (SMS_RECEIVED_ACTION.equals(action)) {
                     handleSmsReceived(intent, error);
+                } else if (SMS_CB_RECEIVED_ACTION.equals(action)) {
+                    handleCbSmsReceived(intent, error);
                 } else if (ACTION_BOOT_COMPLETED.equals(action)) {
                     handleBootCompleted();
                 } else if (TelephonyIntents.ACTION_SERVICE_STATE_CHANGED.equals(action)) {
@@ -363,6 +367,46 @@ public class SmsReceiverService extends Service {
         }
 
         if (messageUri != null) {
+            // Called off of the UI thread so ok to block.
+            MessagingNotification.blockingUpdateNewMessageIndicator(this, true, false);
+        }
+    }
+
+    private void handleCbSmsReceived(Intent intent, int error) {
+        byte[][] pdus;
+        SmsCbMessage[] msgs;
+        int subscription;
+
+        Object[] obj = (Object[])intent.getSerializableExtra("pdus");
+        subscription = intent.getIntExtra("sub_id", 0);
+
+        if (obj == null) {
+            Log.e(TAG, "Failed to extraxt pdus from CB SMS Intent.");
+            return;
+        }
+
+        pdus = new byte[obj.length][];
+        msgs = new SmsCbMessage[obj.length];
+
+        for (int i = 0; i < obj.length; i++) {
+            pdus[i] = (byte[])obj[i];
+            msgs[i] = SmsCbMessage.createFromPdu(pdus[i]);
+        }
+
+        if (msgs == null || msgs[0] == null) {
+            Log.e(TAG, "Failed to decode pdu.");
+            return;
+        }
+
+        int msgId = msgs[0].getMessageIdentifier();
+        if (!GsmBroadcastConfigurator.isMsgIdSupported(msgId)) {
+            Log.w(TAG, "Unsupported SMS CB message recevied, ID: " + msgId);
+            return;
+        }
+
+        Uri cbMsgUri = storeCbMessage(this, msgs, error);
+
+        if (cbMsgUri != null) {
             // Called off of the UI thread so ok to block.
             MessagingNotification.blockingUpdateNewMessageIndicator(this, true, false);
         }
@@ -546,6 +590,67 @@ public class SmsReceiverService extends Service {
 //            case 7: address = "#4#5#6#"; break;
 //        }
 
+        if (!TextUtils.isEmpty(address)) {
+            Contact cacheContact = Contact.get(address,true);
+            if (cacheContact != null) {
+                address = cacheContact.getNumber();
+            }
+        } else {
+            address = getString(R.string.unknown_sender);
+            values.put(Sms.ADDRESS, address);
+        }
+
+        if (((threadId == null) || (threadId == 0)) && (address != null)) {
+            threadId = Threads.getOrCreateThreadId(context, address);
+            values.put(Sms.THREAD_ID, threadId);
+        }
+
+        ContentResolver resolver = context.getContentResolver();
+
+        Uri insertedUri = SqliteWrapper.insert(context, resolver, Inbox.CONTENT_URI, values);
+
+        // Now make sure we're not over the limit in stored messages
+        Recycler.getSmsRecycler().deleteOldMessagesByThreadId(getApplicationContext(), threadId);
+
+        return insertedUri;
+    }
+
+    private Uri storeCbMessage(Context context, SmsCbMessage[] msgs, int error) {
+        SmsCbMessage sms = msgs[0];
+
+        // Store the message in the content provider.
+        ContentValues values = new ContentValues();
+
+        String addr = "CH(" + sms.getMessageIdentifier() + ")";
+        values.put(Inbox.ADDRESS, addr);
+        Log.d(TAG, "storeCbMessage : ADDRESS " + addr);
+
+        // Use now for the timestamp to avoid confusion with clock
+        // drift between the handset and the SMSC.
+        values.put(Inbox.DATE, new Long(System.currentTimeMillis()));
+        values.put(Inbox.READ, 0);
+        values.put(Inbox.SEEN, 0);
+        values.put(Sms.ERROR_CODE, error);
+
+        int pduCount = msgs.length;
+
+        if (pduCount == 1) {
+            // There is only one part, so grab the body directly.
+            values.put(Inbox.BODY, sms.getMessageBody());
+        } else {
+            // Build up the body from the parts.
+            StringBuilder body = new StringBuilder();
+            for (int i = 0; i < pduCount; i++) {
+                sms = msgs[i];
+                body.append(sms.getMessageBody());
+            }
+            values.put(Inbox.BODY, body.toString());
+        }
+
+        // Make sure we've got a thread id so after the insert we'll be able to delete
+        // excess messages.
+        Long threadId = values.getAsLong(Sms.THREAD_ID);
+        String address = values.getAsString(Sms.ADDRESS);
         if (!TextUtils.isEmpty(address)) {
             Contact cacheContact = Contact.get(address,true);
             if (cacheContact != null) {

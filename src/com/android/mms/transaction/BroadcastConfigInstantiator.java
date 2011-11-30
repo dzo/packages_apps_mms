@@ -18,7 +18,7 @@
  * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
  * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
@@ -37,8 +37,8 @@ import android.telephony.ServiceState;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-public class CdmaBroadcastConfigInstantiator extends BroadcastReceiver {
-    private static final String LOG_TAG = "CdmaBroadcastConfigInstantiator";
+public class BroadcastConfigInstantiator extends BroadcastReceiver {
+    private static final String LOG_TAG = "BroadcastConfigInstantiator";
     private ServiceStateListener mServiceStateListener = new ServiceStateListener();
     private Context mContext;
     private int mServiceState = -1;
@@ -64,17 +64,25 @@ public class CdmaBroadcastConfigInstantiator extends BroadcastReceiver {
             if (ss.getState() != mServiceState) {
                 Log.d(LOG_TAG, "Service state changed! " + ss.getState() + " Full: " + ss);
                 if (ss.getState() == ServiceState.STATE_IN_SERVICE ||
-                    ss.getState() == ServiceState.STATE_EMERGENCY_ONLY    ) {
-                    Log.d(LOG_TAG, "Instantiating configurator");
-                    // Instantiating CdmaBroadcastConfigurator triggers setting of cdma bc config
-                    CdmaBroadcastConfigurator cc = CdmaBroadcastConfigurator.getInstance(mContext);
-                    // Unregister
+                    ss.getState() == ServiceState.STATE_EMERGENCY_ONLY) {
                     TelephonyManager tm = (TelephonyManager)mContext.getSystemService(
-                            Context.TELEPHONY_SERVICE);
+                          Context.TELEPHONY_SERVICE);
+                    if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
+                        Log.d(LOG_TAG, "Instantiating GSM CB configurator");
+                        GsmBroadcastConfigurator gbc = GsmBroadcastConfigurator.getInstance(mContext);
+                        Log.d(LOG_TAG, "Configure MsgId 50 from SP");
+                        gbc.configStoredValue();
+                    } else {
+                        Log.d(LOG_TAG, "Instantiating CDMA CB configurator");
+                        // Instantiating CdmaBroadcastConfigurator triggers setting of cdma bc config
+                        CdmaBroadcastConfigurator cc = CdmaBroadcastConfigurator.getInstance(mContext);
+                    }
+
+                    // Unregister
                     tm.listen(mServiceStateListener, PhoneStateListener.LISTEN_NONE);
                 }
                 mServiceState = ss.getState();
             }
         }
-    }
+   }
 }

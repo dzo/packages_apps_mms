@@ -93,6 +93,12 @@
                         android:dialogTitle="@string/prefDialogTitle_vibrateWhen" />
   </PreferenceCategory>
 
+  <PreferenceCategory android:title="@string/cell_broadcast_sms_title">
+    <Preference android:key="pref_key_gsm_umts_cb_sms"
+                      android:summary="@string/gsm_umts_cell_broadcast_sms_summary"
+                      android:title="@string/gsm_umts_cell_broadcast_sms_title" />
+  </PreferenceCategory>
+
   <PreferenceScreen
         android:key="cdma_broadcast_sms_key"
         android:title="@string/cdma_broadcast_messages"
@@ -102,4 +108,5 @@
                 android:targetPackage="com.android.mms"
                 android:targetClass="com.android.mms.ui.CdmaBroadcastMessages" />
   </PreferenceScreen>
+
 </PreferenceScreen>

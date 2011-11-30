@@ -200,11 +200,21 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.GsmUmtsCellBroadcastSms"
+            android:label="@string/cell_broadcast_sms_title">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
+        </activity>
+
         <!-- Require sender permissions to prevent SMS spoofing -->
         <receiver android:name=".transaction.PrivilegedSmsReceiver"
             android:permission="android.permission.BROADCAST_SMS">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_CB_RECEIVED" />
             </intent-filter>
         </receiver>
 
@@ -241,7 +251,7 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".transaction.CdmaBroadcastConfigInstantiator">
+        <receiver android:name=".transaction.BroadcastConfigInstantiator">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

@@ -862,5 +862,14 @@
     <string name="multi_category_enable">Multi-category enabled</string>
     <string name="multi_category_disable">Multi-category disabled</string>
 
+    <!-- GSM/UMTS Cell broadcast SMS strings -->
+    <string name="cell_broadcast_sms_title">Cell Broadcast</string>
+    <string name="gsm_umts_cell_broadcast_sms_title">GSM/UMTS Cell Broadcast</string>
+    <string name="gsm_umts_cell_broadcast_sms_summary">Configure GSM/UMTS CB Messages</string>
+    <string name="cb_sms_settings">Cell Broadcast SMS settings</string>
+    <string name="area_info_msgs">Area Info Msgs(ID 50)</string>
+    <string name="area_info_msgs_enabled">Enabled</string>
+    <string name="area_info_msgs_disabled">Disabled</string>
+
 </resources>
 
