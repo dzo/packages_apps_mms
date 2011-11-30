@@ -92,4 +92,14 @@
                         android:entryValues="@array/prefValues_vibrateWhen"
                         android:dialogTitle="@string/prefDialogTitle_vibrateWhen" />
   </PreferenceCategory>
+
+  <PreferenceScreen
+        android:key="cdma_broadcast_sms_key"
+        android:title="@string/cdma_broadcast_messages"
+        android:persistent="false">
+
+        <intent android:action="android.intent.action.MAIN"
+                android:targetPackage="com.android.mms"
+                android:targetClass="com.android.mms.ui.CdmaBroadcastMessages" />
+  </PreferenceScreen>
 </PreferenceScreen>

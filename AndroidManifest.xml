@@ -241,6 +241,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".transaction.CdmaBroadcastConfigInstantiator">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <activity android:name=".ui.ConfirmRateLimitActivity"
                   android:theme="@android:style/Theme.Dialog">
             <intent-filter>
@@ -259,6 +265,14 @@
             </intent-filter>
             <meta-data android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
+        </activity>
+
+        <activity android:name=".ui.CdmaBroadcastMessages"
+            android:label="@string/cdma_broadcast_messages">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <action android:name="android.intent.action.VIEW" />
+            </intent-filter>
         </activity>
 
         <meta-data android:name="android.app.default_searchable"
