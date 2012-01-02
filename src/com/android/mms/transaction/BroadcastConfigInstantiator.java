@@ -34,12 +34,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
+import android.telephony.TelephonyManager;
 import android.telephony.MSimTelephonyManager;
 import android.util.Log;
 
 public class BroadcastConfigInstantiator extends BroadcastReceiver {
     private static final String LOG_TAG = "BroadcastConfigInstantiator";
-    int mPhoneCount =  MSimTelephonyManager.getDefault().getPhoneCount();
+    int mPhoneCount =  TelephonyManager.getDefault().getPhoneCount();
     private ServiceStateListener[] mServiceStateListener = new ServiceStateListener[mPhoneCount];
     private Context mContext;
     private int[] mServiceState = new int[mPhoneCount];
@@ -55,7 +56,8 @@ public class BroadcastConfigInstantiator extends BroadcastReceiver {
 
         mContext = context;
         Log.d(LOG_TAG, "Registering for ServiceState updates");
-        MSimTelephonyManager tm = MSimTelephonyManager.getDefault();
+        TelephonyManager tm =
+                (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
 
         for (int i = 0; i < mPhoneCount; i++) {
             Log.d(LOG_TAG, "Sub: " + i + ", registering for ServiceState updates.");
@@ -79,9 +81,18 @@ public class BroadcastConfigInstantiator extends BroadcastReceiver {
                       ss.getState() + " Full:  " + ss);
                 if (ss.getState() == ServiceState.STATE_IN_SERVICE ||
                     ss.getState() == ServiceState.STATE_EMERGENCY_ONLY) {
-                    MSimTelephonyManager tm = MSimTelephonyManager.getDefault();
-                    if (tm.getCurrentPhoneType(mSubscription) ==
-                            MSimTelephonyManager.PHONE_TYPE_GSM) {
+                    TelephonyManager tm =
+                          (TelephonyManager)mContext.getSystemService(Context.TELEPHONY_SERVICE);
+
+                    boolean isGsm;
+                    if (tm.isMultiSimEnabled()) {
+                        isGsm = ((MSimTelephonyManager)tm).getCurrentPhoneType(mSubscription) ==
+                                MSimTelephonyManager.PHONE_TYPE_GSM;
+                    } else {
+                        isGsm = tm.getCurrentPhoneType() == TelephonyManager.PHONE_TYPE_GSM;
+                    }
+
+                    if (isGsm) {
                         Log.d(LOG_TAG, "Instantiating GSM CB configurator on sub: " +
                                 mSubscription);
                         GsmBroadcastConfigurator gbc =
