@@ -330,4 +330,18 @@
     <item quantity="other" msgid="7338580381574463136">"<xliff:g id="NUMBER">%1$s</xliff:g> pessoas"</item>
   </plurals>
     <string name="disable_notifications_dialog_message" msgid="7644011234972074096">"Parar notificações de mensagens de texto duplicadas na aplicação predefinida de Mensagens?"</string>
+    <string name="cell_broadcast_sms_title">Difusão Celular</string>
+    <string name="gsm_umts_cell_broadcast_sms_title">Difusão Celular GSM/UMTS</string>
+    <string name="gsm_umts_cell_broadcast_sms_summary">Configurar Mensagens GSM/UMTS de DC</string>
+    <string name="cb_sms_settings">Definições de mensagens de Difusão Celular</string>
+    <string name="area_info_msgs">Msgs de info. de área (ID 50)</string>
+    <string name="area_info_msgs_enabled">Activado</string>
+    <string name="area_info_msgs_disabled">Desactivado</string>
+    <string name="pref_extra_settings">Definições extra</string>
+    <string name="pref_title_strip_unicode">Converter Unicode</string> 
+    <string name="pref_summary_strip_unicode">Substitui caracteres especiais que não são suportados em mensagens de 160 caracteres</string>
+    <string name="pref_title_mms_full_timestamp">Data e hora</string>
+    <string name="pref_summary_mms_full_timestamp">Apresenta a data e a hora na marca temporal</string>	
+    <string name="pref_title_mms_use_sent_timestamp">Marca temporal original</string>
+    <string name="pref_summary_mms_use_sent_timestamp">Apresenta a data de envio em vez da data de recepção na marca temporal</string>
 </resources>
