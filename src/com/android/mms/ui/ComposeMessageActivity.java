@@ -351,7 +351,8 @@ public class ComposeMessageActivity extends Activity
                     s = s.replace("ł", "l");
                     s = s.replace("Đ", "DJ");
                     s = s.replace("đ", "dj");
-
+                    s = s.replace("ç", "c");
+                    
                     output.append(s);
                 }
             }
