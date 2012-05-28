@@ -330,7 +330,7 @@ public class ComposeMessageActivity extends Activity
                 char c = source.charAt(i);
 
                 // Character is encodable by GSM, skip filtering
-                if (gsm.canEncode(c)) {
+                if ((gsm.canEncode(c) || c=='Ç') && c!='ç') {
                     output.append(c);
                 }
                 // Character requires Unicode, try to replace it
@@ -351,8 +351,6 @@ public class ComposeMessageActivity extends Activity
                     s = s.replace("ł", "l");
                     s = s.replace("Đ", "DJ");
                     s = s.replace("đ", "dj");
-                    s = s.replace("ç", "c");
-                    
                     output.append(s);
                 }
             }
